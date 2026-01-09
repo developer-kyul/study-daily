@@ -1,96 +1,44 @@
-<!doctype html>
-<html lang="ko-KR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MD Viewer</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const rawFile = urlParams.get('file');
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.6.1/github-markdown.min.css" />
+  const pathEl = document.getElementById('path');
+  const contentEl = document.getElementById('content');
 
-    <style>
-      body {
-        margin: 0;
-        padding: 24px;
-      }
-      .markdown-body {
-        max-width: 920px;
-        margin: 0 auto;
-      }
-      .top {
-        max-width: 920px;
-        margin: 0 auto 16px;
-        display: flex;
-        gap: 12px;
-        align-items: center;
-      }
-      .top a {
-        text-decoration: none;
-      }
-      .path {
-        opacity: 0.7;
-        font-size: 14px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="top">
-      <a href="./index.html">← 목록으로</a>
-      <span class="path" id="path"></span>
-    </div>
+  if (!rawFile) {
+    contentEl.textContent = 'file 파라미터가 없습니다.';
+  } else {
+    const decodedFile = decodeURIComponent(rawFile);
+    pathEl.textContent = decodedFile;
 
-    <article class="markdown-body" id="content">로딩 중...</article>
+    const targetUrl = '/' + decodedFile;
 
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script>
-      const urlParams = new URLSearchParams(window.location.search);
-      const rawFile = urlParams.get('file');
+    fetch(targetUrl)
+      .then(async (res) => {
+        const text = await res.text();
+        const ct = res.headers.get('content-type') || '';
 
-      const pathEl = document.getElementById('path');
-      const contentEl = document.getElementById('content');
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}\n요청: ${targetUrl}`);
+        }
 
-      if (!rawFile) {
-        contentEl.textContent = 'file 파라미터가 없습니다.';
-      } else {
-        const decodedFile = decodeURIComponent(rawFile);
-        pathEl.textContent = decodedFile;
+        // Netlify 404 페이지가 HTML로 오는 경우 잡기
+        if (ct.includes('text/html')) {
+          throw new Error(`MD 대신 HTML이 응답으로 왔습니다.\n요청: ${targetUrl}\n(대개 Netlify 404/리다이렉트 문제)`);
+        }
 
-        // ✅ 진단 로그
-        const targetUrl = '/' + decodedFile;
-        contentEl.innerHTML = `<p>요청 중: <code>${targetUrl}</code></p>`;
-
-        fetch(targetUrl)
-          .then(async (res) => {
-            const text = await res.text();
-            const ct = res.headers.get('content-type') || '(없음)';
-
-            if (!res.ok) {
-              throw new Error(`HTTP ${res.status} / content-type: ${ct}\n\n${text.slice(0, 300)}`);
-            }
-
-            // md가 아니라 html이 오면(Hello Vite 같은) 여기서 잡아냄
-            if (ct.includes('text/html')) {
-              throw new Error(`md 대신 HTML을 받았습니다. (content-type: ${ct})\n` + `파일이 public에 없거나 경로가 틀렸을 가능성이 큽니다.\n\n` + text.slice(0, 300));
-            }
-
-            if (typeof marked === 'undefined') {
-              throw new Error('marked가 로드되지 않았습니다. <script src> 순서를 확인하세요.');
-            }
-
-            contentEl.innerHTML = marked.parse(text);
-          })
-          .catch((err) => {
-            contentEl.innerHTML = `
+        contentEl.innerHTML = marked.parse(text);
+      })
+      .catch((err) => {
+        contentEl.innerHTML = `
           <div style="color:red; border:1px solid red; padding:10px; white-space:pre-wrap;">
             ❌ 불러오기 실패
-
             ${err.message}
 
             요청 URL: ${window.location.origin}${targetUrl}
           </div>
         `;
-            console.error(err);
-          });
-      }
-    </script>
-  </body>
-</html>
+      });
+  }
+</script>
