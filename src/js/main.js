@@ -16,33 +16,32 @@ document.addEventListener('DOMContentLoaded', () => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
 
-      // 기존 active 제거/추가 로직
       menuLinks.forEach((l) => l.classList.remove('active'));
       link.classList.add('active');
 
       const filePath = link.getAttribute('data-file');
-      viewer.src = 'viewer.html?file=' + filePath;
+
+      // [수정 핵심] 한글 파일명과 공백을 URL용 안전 문자로 변환합니다.
+      const encodedPath = encodeURIComponent(filePath);
+      viewer.src = 'viewer.html?file=' + encodedPath;
 
       viewer.onload = () => {
-        // iframe 내부의 요소를 가져올 때 보안 오류가 날 수 있으므로 try-catch로 감싸는 것이 안전합니다.
         try {
           const iframeDoc = viewer.contentDocument || viewer.contentWindow.document;
 
-          // 1. "목록으로" 버튼 숨기기
-          const header = iframeDoc.querySelector('header') || iframeDoc.querySelector('.header') || iframeDoc.querySelector('.top-nav');
+          // 1. 내부 "목록으로" 버튼 숨기기
+          const header = iframeDoc.querySelector('.top') || iframeDoc.querySelector('.top-nav');
           if (header) {
             header.style.display = 'none';
           }
 
-          // 2. 이미지 에러 체크 (콘솔 확인용)
+          // 2. 이미지 에러 체크
           const images = iframeDoc.querySelectorAll('img');
           images.forEach((img) => {
-            img.onerror = () => {
-              console.error('이미지를 찾을 수 없음:', img.src);
-            };
+            img.onerror = () => console.error('이미지를 찾을 수 없음:', img.src);
           });
         } catch (err) {
-          console.warn('내부 요소를 숨기려 했으나, 보안 설정(CORS) 때문에 실패했습니다. 로컬 서버(Live Server)를 사용 중인지 확인하세요.');
+          console.warn('CORS 또는 로드 문제로 내부 요소 조작에 실패했습니다.');
         }
       };
 
