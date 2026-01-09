@@ -19,7 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const file = link.dataset.file;
 
-    viewer.src = `/viewer.html?file=${encodeURIComponent(file)}`;
+    iframe.src = new URL(`viewer.html?file=${encodeURIComponent(file)}`, window.location.origin).toString();
+
     if (placeholder) placeholder.style.display = 'none';
 
     // (선택) active 처리 준비
