@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MD Viewer</title>
 
-    <!-- GitHub 스타일(보기 좋게) -->
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.6.1/github-markdown.min.css"
-    />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.6.1/github-markdown.min.css" />
 
     <style>
       body {
@@ -44,31 +40,35 @@
 
     <article class="markdown-body" id="content">로딩 중...</article>
 
-    <!-- Markdown 파서 -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
       const params = new URLSearchParams(location.search);
-      const file = params.get("file"); // 예: src/study-review-js/251226-js-01.md
+      // 1. URL에서 파일 경로를 가져옵니다.
+      let file = params.get('file');
 
-      const pathEl = document.getElementById("path");
-      const contentEl = document.getElementById("content");
+      const pathEl = document.getElementById('path');
+      const contentEl = document.getElementById('content');
 
       if (!file) {
-        contentEl.textContent = "file 파라미터가 없습니다. 예) viewer.html?file=src/....md";
+        contentEl.textContent = 'file 파라미터가 없습니다.';
       } else {
+        // 2. [중요] 한글 파일명을 위해 디코딩을 수행합니다.
+        file = decodeURIComponent(file);
         pathEl.textContent = file;
 
-        fetch("./" + file)
+        // 3. 파일을 불러옵니다. (앞에 ./ 를 붙여 현재 위치 기준임을 명시)
+        fetch('./' + file)
           .then((res) => {
-            if (!res.ok) throw new Error("파일을 불러올 수 없음: " + res.status);
+            if (!res.ok) throw new Error('파일을 불러올 수 없음: ' + res.status);
             return res.text();
           })
           .then((md) => {
             contentEl.innerHTML = marked.parse(md);
           })
           .catch((err) => {
-            contentEl.textContent =
-              "불러오기 실패. (로컬 파일로 직접 열면 막힐 수 있어요)\n" + err.message;
+            contentEl.style.whiteSpace = 'pre-wrap';
+            contentEl.innerHTML = `<p style="color:red;">불러오기 실패: ${err.message}</p>
+                                   <p>찾으려는 경로: <b>${file}</b></p>`;
           });
       }
     </script>
