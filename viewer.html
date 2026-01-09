@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko-KR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MD Viewer</title>
+
+    <!-- GitHub 스타일(보기 좋게) -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.6.1/github-markdown.min.css"
+    />
+
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      .markdown-body {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      .top {
+        max-width: 920px;
+        margin: 0 auto 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .top a {
+        text-decoration: none;
+      }
+      .path {
+        opacity: 0.7;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="top">
+      <a href="./index.html">← 목록으로</a>
+      <span class="path" id="path"></span>
+    </div>
+
+    <article class="markdown-body" id="content">로딩 중...</article>
+
+    <!-- Markdown 파서 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+      const params = new URLSearchParams(location.search);
+      const file = params.get("file"); // 예: src/study-review-js/251226-js-01.md
+
+      const pathEl = document.getElementById("path");
+      const contentEl = document.getElementById("content");
+
+      if (!file) {
+        contentEl.textContent = "file 파라미터가 없습니다. 예) viewer.html?file=src/....md";
+      } else {
+        pathEl.textContent = file;
+
+        fetch("./" + file)
+          .then((res) => {
+            if (!res.ok) throw new Error("파일을 불러올 수 없음: " + res.status);
+            return res.text();
+          })
+          .then((md) => {
+            contentEl.innerHTML = marked.parse(md);
+          })
+          .catch((err) => {
+            contentEl.textContent =
+              "불러오기 실패. (로컬 파일로 직접 열면 막힐 수 있어요)\n" + err.message;
+          });
+      }
+    </script>
+  </body>
+</html>
