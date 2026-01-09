@@ -126,7 +126,7 @@ bun ./파일명.html
 - ❌ 개발 중, 코드 변경사항이 반영되지 않음
 - ❌ 개발 중, 이전 버전의 파일을 계속 사용
 
-![alt text](./src/img/image.png)
+![alt text](./public/img/image.png)
 
 # 관련 단축키
 
