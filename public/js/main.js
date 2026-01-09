@@ -1,16 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
   const categoryBtns = document.querySelectorAll('.category-btn');
-  const viewer = document.getElementById('md-viewer');
+  const viewer = document.getElementById('md-viewer'); // ✅ iframe 요소
   const placeholder = document.getElementById('placeholder');
 
-  // 1. 카테고리 아코디언
+  // 1) 카테고리 아코디언
   categoryBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
       btn.classList.toggle('collapsed');
     });
   });
 
-  // 2. 메뉴 클릭 → iframe 로딩
+  // 2) 메뉴 클릭 → iframe 로딩
   document.addEventListener('click', (e) => {
     const link = e.target.closest('a[data-file]');
     if (!link) return;
@@ -19,15 +19,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const file = link.dataset.file;
 
-    iframe.src = new URL(`viewer.html?file=${encodeURIComponent(file)}`, window.location.origin).toString();
+    // ✅ 로그는 반드시 여기(이벤트 안)에서
+    console.log('clicked:', link);
+    console.log('file:', file);
 
+    // ✅ 배포에서도 안전: 절대경로(/viewer.html)로 생성
+    const url = new URL('/viewer.html', window.location.origin);
+    url.searchParams.set('file', file);
+
+    // ✅ iframe src 변경
+    viewer.src = url.toString();
+
+    // ✅ placeholder 숨김
     if (placeholder) placeholder.style.display = 'none';
 
-    // (선택) active 처리 준비
+    // ✅ active 처리
     document.querySelectorAll('.sub-menu a.active').forEach((a) => a.classList.remove('active'));
     link.classList.add('active');
   });
 });
-
-console.log('clicked:', link);
-console.log('file:', file);
