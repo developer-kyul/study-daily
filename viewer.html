@@ -1,44 +1,123 @@
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const rawFile = urlParams.get('file');
+<!doctype html>
+<html lang="ko-KR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MD Viewer</title>
 
-  const pathEl = document.getElementById('path');
-  const contentEl = document.getElementById('content');
+    <!-- GitHub 스타일 마크다운 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css@5.6.1/github-markdown.min.css" />
 
-  if (!rawFile) {
-    contentEl.textContent = 'file 파라미터가 없습니다.';
-  } else {
-    const decodedFile = decodeURIComponent(rawFile);
-    pathEl.textContent = decodedFile;
+    <style>
+      body {
+        margin: 0;
+        padding: 24px;
+      }
+      .markdown-body {
+        max-width: 920px;
+        margin: 0 auto;
+      }
+      .top {
+        max-width: 920px;
+        margin: 0 auto 16px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .top a {
+        text-decoration: none;
+      }
+      .path {
+        opacity: 0.7;
+        font-size: 14px;
+        word-break: break-all;
+      }
+      code {
+        word-break: break-all;
+      }
+    </style>
+  </head>
 
-    const targetUrl = '/' + decodedFile;
+  <body>
+    <div class="top">
+      <a href="./index.html">← 목록으로</a>
+      <span class="path" id="path"></span>
+    </div>
 
-    fetch(targetUrl)
-      .then(async (res) => {
-        const text = await res.text();
-        const ct = res.headers.get('content-type') || '';
+    <article class="markdown-body" id="content">로딩 중...</article>
 
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}\n요청: ${targetUrl}`);
+    <!-- marked 로더 -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const rawFile = urlParams.get('file');
+
+        const pathEl = document.getElementById('path');
+        const contentEl = document.getElementById('content');
+
+        // 안전장치: DOM 요소 없을 때
+        if (!pathEl || !contentEl) {
+          document.body.innerHTML = `
+            <div style="padding:16px; color:red;">
+              ❌ viewer.html 템플릿에 <code>#path</code> 또는 <code>#content</code> 요소가 없습니다.
+            </div>
+          `;
+          return;
         }
 
-        // Netlify 404 페이지가 HTML로 오는 경우 잡기
-        if (ct.includes('text/html')) {
-          throw new Error(`MD 대신 HTML이 응답으로 왔습니다.\n요청: ${targetUrl}\n(대개 Netlify 404/리다이렉트 문제)`);
+        // file 파라미터 없을 때
+        if (!rawFile) {
+          contentEl.textContent = 'file 파라미터가 없습니다.';
+          return;
         }
 
-        contentEl.innerHTML = marked.parse(text);
-      })
-      .catch((err) => {
-        contentEl.innerHTML = `
-          <div style="color:red; border:1px solid red; padding:10px; white-space:pre-wrap;">
-            ❌ 불러오기 실패
-            ${err.message}
+        const decodedFile = decodeURIComponent(rawFile);
 
-            요청 URL: ${window.location.origin}${targetUrl}
-          </div>
-        `;
+        // 경로 보안(간단): 상위 폴더 접근 차단
+        if (decodedFile.includes('..')) {
+          contentEl.textContent = '허용되지 않는 경로입니다.';
+          return;
+        }
+
+        pathEl.textContent = decodedFile;
+
+        // ✅ Vite/Netlify 공통 안정: 항상 루트 기준 요청
+        const targetUrl = '/' + decodedFile;
+
+        fetch(targetUrl)
+          .then(async (res) => {
+            const text = await res.text();
+            const ct = res.headers.get('content-type') || '';
+
+            if (!res.ok) {
+              throw new Error(`HTTP ${res.status}\n요청: ${targetUrl}`);
+            }
+
+            // Netlify 404 페이지나 index가 HTML로 오는 경우 방어
+            if (ct.includes('text/html')) {
+              throw new Error(`MD 대신 HTML이 응답으로 왔습니다.\n요청: ${targetUrl}\n(대개 404 또는 리다이렉트/경로 문제)`);
+            }
+
+            if (typeof marked === 'undefined') {
+              throw new Error('marked 로드 실패');
+            }
+
+            contentEl.innerHTML = marked.parse(text);
+          })
+          .catch((err) => {
+            contentEl.innerHTML = `
+              <div style="color:red; border:1px solid red; padding:10px; white-space:pre-wrap;">
+                ❌ 불러오기 실패
+                ${err.message}
+
+                요청 URL: ${window.location.origin}${targetUrl}
+              </div>
+            `;
+            console.error(err);
+          });
       });
-  }
-</script>
+    </script>
+  </body>
+</html>

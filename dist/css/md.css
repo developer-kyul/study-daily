@@ -201,9 +201,9 @@ body {
   opacity: 1; /* 클릭하면 보임 */
 }
 
-/* .viewer-wrapper {
+.viewer-wrapper {
   height: 80vh;
-} */
+}
 
 #md-viewer {
   width: 100%;

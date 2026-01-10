@@ -1,3 +1,5 @@
+//✍ 변수, 상수 작성 과제
+
 //  1. 좋아하는 영화 제목
 let favoriteMovieTitle = '인터스텔라';
 

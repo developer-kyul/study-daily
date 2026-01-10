@@ -1,0 +1,60 @@
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const rawFile = urlParams.get('file');
+
+    const pathEl = document.getElementById('path');
+    const contentEl = document.getElementById('content');
+
+    // 🔒 안전장치 (이제 null 에러 절대 안 남)
+    if (!pathEl || !contentEl) {
+      document.body.innerHTML = `
+        <div style="padding:16px; color:red;">
+          ❌ viewer.html 템플릿에
+          <code>id="path"</code> 또는
+          <code>id="content"</code> 요소가 없습니다.
+        </div>
+      `;
+      return;
+    }
+
+    if (!rawFile) {
+      contentEl.textContent = 'file 파라미터가 없습니다.';
+      return;
+    }
+
+    const decodedFile = decodeURIComponent(rawFile);
+    pathEl.textContent = decodedFile;
+
+    const targetUrl = '/' + decodedFile;
+
+    fetch(targetUrl)
+      .then(async (res) => {
+        const text = await res.text();
+        const ct = res.headers.get('content-type') || '';
+
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}\n요청: ${targetUrl}`);
+        }
+
+        // Netlify 404 페이지가 HTML로 오는 경우
+        if (ct.includes('text/html')) {
+          throw new Error(`MD 대신 HTML이 응답으로 왔습니다.\n요청: ${targetUrl}\n(Netlify 404 또는 리다이렉트 문제)`);
+        }
+
+        contentEl.innerHTML = marked.parse(text);
+      })
+      .catch((err) => {
+        contentEl.innerHTML = `
+          <div style="color:red; border:1px solid red; padding:10px; white-space:pre-wrap;">
+            ❌ 불러오기 실패
+            ${err.message}
+
+            요청 URL: ${window.location.origin}${targetUrl}
+          </div>
+        `;
+        console.error(err);
+      });
+  });
+</script>
